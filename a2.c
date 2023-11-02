@@ -46,8 +46,47 @@ Also keep track of line_count
 Returns pointer to string array
 No format error handling
 */
-char** read_lines(FILE *input_fp, int *line_count) {
+char** read_lines(FILE *input_fp, int size, int *line_count) {
+    int current_capacity = INITIAL_MALLOC;
     char **lines = (char **) malloc(sizeof(char *) * INITIAL_MALLOC);
+    if (lines == NULL) {
+        perror("Failed to allocate.");
+        exit(EXIT_FAILURE);
+    }
+    FILE *newline_fp = input_fp;
+
+    while (1) {
+        if (*line_count >= current_capacity) {
+            current_capacity *= 2;
+            char **temp = realloc(lines, sizeof(char *) * current_capacity);
+            if (temp == NULL) {
+                free(lines);
+                perror("Failed to allocate.");
+                exit(EXIT_FAILURE);
+            }
+            lines = temp;
+        }
+        
+        int line_size = 0;
+        while (1) {
+            char c = fgetc(newline_fp);
+            if (feof(newline_fp) || c == '\n') {
+                break;
+            }
+            line_size++;
+        }
+        char *line = (char *) malloc(sizeof(char) * line_size);
+        if (fgets(line, line_size, input_fp) == NULL) {
+            break;
+        }
+        lines[*line_count] = line;
+        (*line_count)++;
+    }
+
+    for (int i = 0; i < *line_count; i++) {
+        printf("%s\n", lines[i]);
+    }
+
     return lines;
 }
 
@@ -127,20 +166,21 @@ int month_to_int(char month[]) {
 }
 
 int main(int argc, char **argv) {
+
     // A numbers of everyone. AXXXX_AXXXX_AXXX format.
-    char *A_Num = "A01340526_AXXXXXXXX_AXXXXXXXX";
+    char *A_Num = "A01340526_A01062792_A01300754";
 
     // Outputs A number file
-    FILE *output_file = fopen(A_Num, "w");
-    if (output_file == NULL) {
+    FILE *a_num_fp = fopen(A_Num, "w");
+    if (a_num_fp == NULL) {
         printf("Failed to create the output file.\n");
         return 1;
     }
-    fclose(output_file);
+    fclose(a_num_fp);
 
     // Validating arguments
     if (argc != 4) {
-        printf("Usage: %s <input_file> <output_file> <option>\n", argv[0]);
+        printf("Usage: %s <input_file> <a_num_fp> <option>\n", argv[0]);
         return EXIT_FAILURE;
     }
 
@@ -172,7 +212,7 @@ int main(int argc, char **argv) {
     }
 
     int line_count = 0;
-    char **lines = read_lines(input_fp, &line_count);
+    char **lines = read_lines(input_fp, size, &line_count);
     int student_count = 0;
     Student *students = generate_students_from_lines(lines, line_count, &student_count, output_fp);
     merge_sort(students, student_count);
