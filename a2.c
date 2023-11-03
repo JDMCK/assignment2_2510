@@ -53,8 +53,6 @@ char** read_lines(FILE *input_fp, int size, int *line_count) {
         perror("Failed to allocate.");
         exit(EXIT_FAILURE);
     }
-    FILE *newline_fp = input_fp;
-
     while (1) {
         if (*line_count >= current_capacity) {
             current_capacity *= 2;
@@ -66,25 +64,49 @@ char** read_lines(FILE *input_fp, int size, int *line_count) {
             }
             lines = temp;
         }
-        
-        int line_size = 0;
-        while (1) {
-            char c = fgetc(newline_fp);
-            if (feof(newline_fp) || c == '\n') {
-                break;
-            }
-            line_size++;
-        }
-        char *line = (char *) malloc(sizeof(char) * line_size);
-        if (fgets(line, line_size, input_fp) == NULL) {
+
+        int position = ftell(input_fp);
+        if (position == -1) {
+            perror("ftell failed.");
             break;
         }
+        
+        int line_size = 0;
+        char c;
+        while ((c = fgetc(input_fp)) != '\n' && c != EOF) {
+            line_size++;
+        }
+        // Accounts for new line and null terminator
+        line_size += 2;
+
+        // Moves pointer back after counting size
+        fseek(input_fp, position, SEEK_SET);
+
+        char *line = (char *) malloc(sizeof(char) * line_size);
+        if (line == NULL) {
+            perror("Failed to allocate.");
+            exit(EXIT_FAILURE);
+        }
+        if (fgets(line, line_size, input_fp) == NULL) {
+            free(line);
+
+            if (feof(input_fp)) {
+                break;
+            }
+            continue;
+        }
+        line[strcspn(line, "\n")] = '\0';
+
         lines[*line_count] = line;
         (*line_count)++;
+
+        if (c == EOF) {
+            break;
+        }
     }
 
     for (int i = 0; i < *line_count; i++) {
-        printf("%s\n", lines[i]);
+        printf("%s", lines[i]);
     }
 
     return lines;
@@ -103,8 +125,27 @@ Takes lines and returns a pointer to a student array (unsorted)
 Also takes output fp to handle errors by calling output_error()
 */
 Student* generate_students_from_lines(char **lines, int line_count, int *student_count, FILE *output_fp) {
+    int current_capacity = INITIAL_MALLOC;
     Student *students = (Student *) malloc(sizeof(Student) * INITIAL_MALLOC);
-    return students;
+    if (students == NULL) {
+        perror("Failed to allocate.");
+        exit(EXIT_FAILURE);
+    }
+
+    while (1) {
+        if (*student_count >= current_capacity) {
+            current_capacity *= 2;
+            Student *temp = realloc(students, sizeof(Student) * current_capacity);
+            if (temp == NULL) {
+                free(students);
+                perror("Failed to allocate.");
+                exit(EXIT_FAILURE);
+            }
+            students = temp;
+        }
+
+        // Generate students from strings
+    }
 }
 
 /*

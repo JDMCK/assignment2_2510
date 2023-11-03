@@ -1,3 +1,2 @@
-These are some lines
-
-these are some more
+This is a test.
+So is this.
