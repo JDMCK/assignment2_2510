@@ -13,19 +13,19 @@ typedef struct {
     char *first_name;
     char *last_name;
     int birth_year;
-    int birth_month;
+    char *birth_month;
     int birth_day;
-    float gpa;
+    char *gpa_str;
 } DomesticStudent;
 
 typedef struct {
     char *first_name;
     char *last_name;
     int birth_year;
-    int birth_month;
+    char *birth_month;
     int birth_day;
-    float gpa;
-    int TOEFL;
+    char *gpa_str;
+    int TOEFL_score;
 } InternationalStudent;
 
 typedef union {
@@ -105,84 +105,7 @@ char** read_lines(FILE *input_fp, int size, int *line_count) {
         }
     }
 
-    for (int i = 0; i < *line_count; i++) {
-        printf("%s", lines[i]);
-    }
-
     return lines;
-}
-
-/*
-Pass in the output fp and a string literal to be written to output file
-*/
-void output_error(FILE *output_fp, char error[]) {
-
-    fprintf(output_fp, "%s", error);
-}
-
-/*
-Takes lines and returns a pointer to a student array (unsorted)
-Also takes output fp to handle errors by calling output_error()
-*/
-Student* generate_students_from_lines(char **lines, int line_count, int *student_count, FILE *output_fp) {
-    int current_capacity = INITIAL_MALLOC;
-    Student *students = (Student *) malloc(sizeof(Student) * INITIAL_MALLOC);
-    if (students == NULL) {
-        perror("Failed to allocate.");
-        exit(EXIT_FAILURE);
-    }
-
-    while (1) {
-        if (*student_count >= current_capacity) {
-            current_capacity *= 2;
-            Student *temp = realloc(students, sizeof(Student) * current_capacity);
-            if (temp == NULL) {
-                free(students);
-                perror("Failed to allocate.");
-                exit(EXIT_FAILURE);
-            }
-            students = temp;
-        }
-
-        // Generate students from strings
-    }
-}
-
-/*
-Outputs domestic (option 1)
-*/
-void output_domestic(FILE *output_fp, Student *students, int student_count) {
-
-}
-
-/*
-Outputs international (option 2)
-*/
-void output_international(FILE *output_fp, Student *students, int student_count) {
-
-}
-
-/*
-Outputs both (option3)
-*/
-void output_both(FILE *output_fp, Student *students, int student_count) {
-
-}
-
-/*
-Takes student array and sorts it in place
-*/
-void merge_sort(Student *student, int student_count) {
-
-}
-
-/*
-Returns 1 if student a is less than student b
-Returns -1 if student b is less than student a
-Returns 0 if student a is equal to student b
-*/
-int student_comparator(Student a, Student b) {
-    return 1;
 }
 
 /*
@@ -202,8 +125,186 @@ int month_to_int(char month[]) {
         }
     }
 
-    perror("Inavlid month was given.\n");
+    return -1;
+}
+
+/*
+Pass in the output fp and a string literal to be written to output file
+*/
+void output_error(FILE *output_fp, char error[]) {
+
+    fprintf(output_fp, "ERROR: %s", error);
     exit(EXIT_FAILURE);
+}
+
+/*
+Takes lines and returns a pointer to a student array (unsorted)
+Also takes output fp to handle errors by calling output_error()
+*/
+Student parse_line(char *line, FILE *output_fp) {
+    Student student;
+
+    // Temporaries to hold parts of the input
+    char first_name[50];
+    char last_name[50];
+    char date[15] = "";
+    char gpa_str[6] = "";
+    char type;
+    int TOEFL_score = -1;
+
+    // Parse input assuming the last field can be 'I TOEFL' or 'D'
+    sscanf(line, "%s %s %s %s %c %d", first_name, last_name, date, gpa_str, &type, &TOEFL_score);
+
+    // Parse the birth date
+    int birth_year, birth_day;
+    char birth_month[4];
+    sscanf(date, "%3s-%d-%d", birth_month, &birth_day, &birth_year);
+    birth_month[3] = '\0';
+
+    // Checks for invalid inputs
+    
+    // Checks for date
+    if (date[0] == '\0') output_error(output_fp, "Invalid date");
+    if (birth_year < 1950 || birth_year > 2010) output_error(output_fp, "Invalid birth year");
+    if (month_to_int(birth_month) == -1) output_error(output_fp, "Invalid birth month");
+    if (birth_day > 31) output_error(output_fp, "Invalid birth day");
+
+    // Checks for GPA
+    float epsilon = 0.0001f;
+    float gpa;
+    if (sscanf(gpa_str, "%f", &gpa) != 1 || gpa > 4.3f + epsilon || gpa < 0) output_error(output_fp, "Invalid GPA");
+
+    // Checks type
+    if (type != 'I' && type != 'D') output_error(output_fp, "Invalid type");
+
+    // Checks TOEFL
+    if (type == 'I')
+        if (TOEFL_score > 120 || TOEFL_score < 0) output_error(output_fp, "Invalid TOEFL score");
+
+    // Assign the common fields
+    if (type == 'I') {
+        student.type = INTERNATIONAL;
+        student.student.international.first_name = strdup(first_name);
+        student.student.international.last_name = strdup(last_name);
+        student.student.international.birth_year = birth_year;
+        student.student.international.birth_month = strdup(birth_month);
+        student.student.international.birth_day = birth_day;
+        student.student.international.gpa_str = strdup(gpa_str);
+        student.student.international.TOEFL_score = TOEFL_score;
+    } else {
+        student.type = DOMESTIC;
+        student.student.domestic.first_name = strdup(first_name);
+        student.student.domestic.last_name = strdup(last_name);
+        student.student.domestic.birth_year = birth_year;
+        student.student.domestic.birth_month = strdup(birth_month);
+        student.student.domestic.birth_day = birth_day;
+        student.student.domestic.gpa_str = strdup(gpa_str);
+    }
+
+    return student;
+}
+
+Student* generate_students_from_lines(char **lines, int line_count, int *student_count, FILE *output_fp) {
+    // Allocate memory for students array
+    Student *students = malloc(sizeof(Student) * line_count);
+    if (students == NULL) {
+        perror("Failed to allocate memory.\n");
+        exit(EXIT_FAILURE);
+    }
+
+    for (int i = 0; i < line_count; i++) {
+        // Parse each line and store in the students array
+        students[i] = parse_line(lines[i], output_fp);
+        (*student_count)++;
+    }
+
+    return students;
+}
+
+/*
+Outputs domestic (option 1)
+*/
+void output_domestic(FILE *output_fp, Student *students, int student_count) {
+    for (int i = 0; i < student_count; i++) {
+        if (students[i].type == DOMESTIC) {
+            char *first_name = students[i].student.domestic.first_name;
+            char *last_name = students[i].student.domestic.last_name;
+            char *birth_month = students[i].student.domestic.birth_month;
+            int birth_day = students[i].student.domestic.birth_day;
+            int birth_year = students[i].student.domestic.birth_year;
+            char *gpa_str = students[i].student.domestic.gpa_str;
+
+            fprintf(output_fp ,"%s %s %s-%d-%d %s D\n", first_name, last_name,
+                birth_month, birth_day, birth_year, gpa_str);
+        }
+    }
+}
+
+/*
+Outputs international (option 2)
+*/
+void output_international(FILE *output_fp, Student *students, int student_count) {
+    for (int i = 0; i < student_count; i++) {
+        if (students[i].type == INTERNATIONAL) {
+            char *first_name = students[i].student.international.first_name;
+            char *last_name = students[i].student.international.last_name;
+            char *birth_month = students[i].student.international.birth_month;
+            int birth_day = students[i].student.international.birth_day;
+            int birth_year = students[i].student.international.birth_year;
+            char *gpa_str = students[i].student.international.gpa_str;
+            int TOEFL_score = students[i].student.international.TOEFL_score;
+
+            fprintf(output_fp, "%s %s %s-%d-%d %s I %d\n", first_name, last_name,
+                birth_month, birth_day, birth_year, gpa_str, TOEFL_score);
+        }
+    }
+}
+
+/*
+Outputs both (option3)
+*/
+void output_both(FILE *output_fp, Student *students, int student_count) {
+    for (int i = 0; i < student_count; i++) {
+        if (students[i].type == INTERNATIONAL) {
+            char *first_name = students[i].student.international.first_name;
+            char *last_name = students[i].student.international.last_name;
+            char *birth_month = students[i].student.international.birth_month;
+            int birth_day = students[i].student.international.birth_day;
+            int birth_year = students[i].student.international.birth_year;
+            char *gpa_str = students[i].student.international.gpa_str;
+            int TOEFL_score = students[i].student.international.TOEFL_score;
+
+            fprintf(output_fp, "%s %s %s-%d-%d %s I %d\n", first_name, last_name,
+                birth_month, birth_day, birth_year, gpa_str, TOEFL_score);
+        }
+        if (students[i].type == DOMESTIC) {
+            char *first_name = students[i].student.domestic.first_name;
+            char *last_name = students[i].student.domestic.last_name;
+            char *birth_month = students[i].student.domestic.birth_month;
+            int birth_day = students[i].student.domestic.birth_day;
+            int birth_year = students[i].student.domestic.birth_year;
+            char *gpa_str = students[i].student.domestic.gpa_str;
+
+            fprintf(output_fp ,"%s %s %s-%d-%d %s D\n", first_name, last_name,
+                birth_month, birth_day, birth_year, gpa_str);
+        }
+    }
+}
+
+/*
+Takes student array and sorts it in place
+*/
+void merge_sort(Student *student, int student_count) {
+
+}
+
+/*
+Returns 1 if student a is less than student b
+Returns -1 if student b is less than student a
+Returns 0 if student a is equal to student b
+*/
+int student_comparator(Student a, Student b) {
+    return 1;
 }
 
 int main(int argc, char **argv) {
