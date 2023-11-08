@@ -298,13 +298,173 @@ void merge_sort(Student *student, int student_count) {
 
 }
 
+void to_lower_case(char* str) {
+    int i = 0;
+    while (str[i] != '\0') {
+        if (str[i] >= 'A' && str[i] <= 'Z') {
+            str[i] = str[i] + 32;
+        }
+        i++;
+    }
+}
+
 /*
 Returns 1 if student a is less than student b
 Returns -1 if student b is less than student a
 Returns 0 if student a is equal to student b
 */
 int student_comparator(Student a, Student b) {
-    return 1;
+    // Initialize values
+    int a_birth_year;
+    int a_birth_month;
+    int a_birth_day;
+    char *a_last_name;
+    char *a_first_name;
+    char *a_gpa;
+    int a_TOEFL = -1;
+
+    int b_birth_year;
+    int b_birth_month;
+    int b_birth_day;
+    char *b_last_name;
+    char *b_first_name;
+    char *b_gpa;
+    int b_TOEFL = -1;
+
+    // Set the values
+    if (a.type == DOMESTIC) {
+        a_birth_year = a.student.domestic.birth_year;
+        a_birth_month = month_to_int(a.student.domestic.birth_month);
+        a_birth_day = a.student.domestic.birth_day;
+        a_last_name = (char *)malloc(strlen(a.student.domestic.last_name) + 1);
+        a_first_name = (char *)malloc(strlen(a.student.domestic.first_name) + 1);
+        strcpy(a_last_name, a.student.domestic.last_name);
+        strcpy(a_first_name, a.student.domestic.first_name);
+        a_gpa = a.student.domestic.gpa_str;
+    } else {
+        a_birth_year = a.student.international.birth_year;
+        a_birth_month = month_to_int(a.student.international.birth_month);
+        a_birth_day = a.student.international.birth_day;
+        a_last_name = (char *)malloc(strlen(a.student.international.last_name) + 1);
+        a_first_name = (char *)malloc(strlen(a.student.international.first_name) + 1);
+        strcpy(a_last_name, a.student.international.last_name);
+        strcpy(a_first_name, a.student.international.first_name);
+        a_gpa = a.student.international.gpa_str;
+        a_TOEFL = a.student.international.TOEFL_score;
+    }
+    if (b.type == DOMESTIC) {
+        b_birth_year = b.student.domestic.birth_year;
+        b_birth_month = month_to_int(b.student.domestic.birth_month);
+        b_birth_day = b.student.domestic.birth_day;
+        b_last_name = (char *)malloc(strlen(b.student.domestic.last_name) + 1);
+        b_first_name = (char *)malloc(strlen(b.student.domestic.first_name) + 1);
+        strcpy(b_last_name, b.student.domestic.last_name);
+        strcpy(b_first_name, b.student.domestic.first_name);
+        b_gpa = b.student.domestic.gpa_str;
+    } else {
+        b_birth_year = b.student.international.birth_year;
+        b_birth_month = month_to_int(b.student.international.birth_month);
+        b_birth_day = b.student.international.birth_day;
+        b_last_name = (char *)malloc(strlen(b.student.international.last_name) + 1);
+        b_first_name = (char *)malloc(strlen(b.student.international.first_name) + 1);
+        strcpy(b_last_name, b.student.international.last_name);
+        strcpy(b_first_name, b.student.international.first_name);
+        b_gpa = b.student.international.gpa_str;
+        b_TOEFL = b.student.international.TOEFL_score;
+    }
+
+    // Start comparisons
+    // Birth year
+    if (a_birth_year == b_birth_year) {
+        // printf("Birth year is the same.\n");
+        // Birth month
+        if (a_birth_month == b_birth_month) {
+            // printf("Birth month is the same.\n");
+            // Birth day
+            if (a_birth_day == b_birth_day) {
+                // printf("Birth day is the same.\n");
+                // Last Name
+                to_lower_case(a_last_name);
+                to_lower_case(b_last_name);
+                if (strcmp(a_last_name, b_last_name) == 0) {
+                    // printf("Last name is the same.\n");
+                    free(a_last_name);
+                    free(b_last_name);
+
+                    // First Name
+                    to_lower_case(a_first_name);
+                    to_lower_case(b_first_name);
+                    if (strcmp(a_first_name, b_first_name) == 0) {
+                        free(a_first_name);
+                        free(b_first_name);
+                        // printf("First name is the same.\n");
+
+                        // GPA
+                        double cmp_gpa = atof(a_gpa) - atof(b_gpa);
+                        double epsilon = 0.0001F;
+                        if (cmp_gpa <= epsilon && cmp_gpa >= (-1 * epsilon)) {
+                            // printf("GPA is the same.\n");
+                            // Status
+                            if (a_TOEFL == -1 && b_TOEFL == -1) {
+                                return 0;
+                            } else if (a_TOEFL != -1 && b_TOEFL == -1) {
+                                return 1;
+                            } else if (a_TOEFL == -1 && b_TOEFL != -1) {
+                                return -1;
+                            } else {
+                                // printf("Both students are INTERNATIONAL.\n");
+                                // TOEFL
+                                if (a_TOEFL == b_TOEFL) {
+                                    // printf("TOEFL score is the same.\n");
+                                    return 0;
+                                } else if (a_TOEFL < b_TOEFL) {
+                                    return 1;
+                                } else {
+                                    return -1;
+                                }
+                            }
+                        } else if (cmp_gpa < (-1 * epsilon)) {
+                            return 1;
+                        } else {
+                            return -1;
+                        }
+                    } else if (strcmp(a_first_name, b_first_name) < 0) {
+                        free(a_first_name);
+                        free(b_first_name);
+                        return 1;
+                    } else {
+                        free(a_first_name);
+                        free(b_first_name);
+                        return -1;
+                    }
+                } else if (strcmp(a_last_name, b_last_name) < 0) {
+                    free(a_last_name);
+                    free(a_first_name);
+                    free(b_last_name);
+                    free(b_first_name);
+                    return 1;
+                } else {
+                    free(a_last_name);
+                    free(a_first_name);
+                    free(b_last_name);
+                    free(b_first_name);
+                    return -1;
+                }
+            } else if (a_birth_day > b_birth_day) {
+                return 1;
+            } else {
+                return -1;
+            }
+        } else if (a_birth_month > b_birth_month) {
+            return 1;
+        } else {
+            return -1;
+        }
+    } else if (a_birth_year > b_birth_year) {
+        return 1;
+    } else {
+        return -1;
+    }
 }
 
 int main(int argc, char **argv) {
@@ -358,6 +518,17 @@ int main(int argc, char **argv) {
     int student_count = 0;
     Student *students = generate_students_from_lines(lines, line_count, &student_count, output_fp);
     merge_sort(students, student_count);
+
+    // Uncomment to test two student inputs
+    // int cmp_result = student_comparator(students[0], students[1]);
+    // if (cmp_result == 0) {
+    //     printf("Both students are equal!\n");
+    // } else if (cmp_result == -1) {
+    //     printf("First student should come before!\n");
+    // } else {
+    //     printf("Second student should come before!\n");
+    // }
+    // return 0;
 
     // Output to file based on option
     switch (option) {
