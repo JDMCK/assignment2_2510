@@ -463,18 +463,18 @@ int student_comparator(Student a, Student b) {
                                 if (a_TOEFL == b_TOEFL) {
                                     // printf("TOEFL score is the same.\n");
                                     return 0;
-                                } else if (a_TOEFL < b_TOEFL) {
+                                } else if (a_TOEFL > b_TOEFL) {
                                     return 1;
                                 } else {
                                     return -1;
                                 }
                             }
-                        } else if (cmp_gpa < (-1 * epsilon)) {
+                        } else if (cmp_gpa > (-1 * epsilon)) {
                             return 1;
                         } else {
                             return -1;
                         }
-                    } else if (strcmp(a_first_name, b_first_name) < 0) {
+                    } else if (strcmp(a_first_name, b_first_name) > 0) {
                         free(a_first_name);
                         free(b_first_name);
                         return 1;
@@ -483,7 +483,7 @@ int student_comparator(Student a, Student b) {
                         free(b_first_name);
                         return -1;
                     }
-                } else if (strcmp(a_last_name, b_last_name) < 0) {
+                } else if (strcmp(a_last_name, b_last_name) > 0) {
                     free(a_last_name);
                     free(a_first_name);
                     free(b_last_name);
