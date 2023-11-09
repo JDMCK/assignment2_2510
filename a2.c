@@ -139,7 +139,7 @@ Pass in the output fp and a string literal to be written to output file
 */
 void output_error(FILE *output_fp, char error[]) {
 
-    fprintf(output_fp, "ERROR: %s\n", error);
+    fprintf(output_fp, "ERROR: %s\n\n", error);
     exit(EXIT_FAILURE);
 }
 
@@ -344,13 +344,6 @@ void output_both(FILE *output_fp, Student *students, int student_count) {
     }
 }
 
-/*
-Takes student array and sorts it in place
-*/
-void merge_sort(Student *student, int student_count) {
-
-}
-
 void to_lower_case(char* str) {
     int i = 0;
     while (str[i] != '\0') {
@@ -520,6 +513,53 @@ int student_comparator(Student a, Student b) {
     }
 }
 
+/*
+Takes student array and sorts it in place
+*/
+void merge(Student *student, int start, int mid, int end) {
+    int n1 = mid - start + 1;
+    int n2 = end - mid;
+
+    Student *left = (Student*)malloc(n1 * sizeof(Student));
+    Student *right = (Student*)malloc(n2 * sizeof(Student));
+
+    for (int i = 0; i < n1; i++) {
+        left[i] = student[start + i];
+    }
+    for (int j = 0; j < n2; j++) {
+        right[j] = student[mid + 1 + j];
+    }
+
+    int i = 0, j = 0, k = start;
+    while (i < n1 && j < n2) {
+        if (student_comparator(left[i], right[j]) <= 0) {
+            student[k++] = left[i++];
+        } else {
+            student[k++] = right[j++];
+        }
+    }
+
+    while (i < n1) {
+        student[k++] = left[i++];
+    }
+
+    while (j < n2) {
+        student[k++] = right[j++];
+    }
+
+    free(left);
+    free(right);
+}
+
+void merge_sort(Student *student, int start, int end) {
+    if (start < end) {
+        int mid = start + (end - start) / 2;
+        merge_sort(student, start, mid);
+        merge_sort(student, mid + 1, end);
+        merge(student, start, mid, end);
+    }
+}
+
 int main(int argc, char **argv) {
 
     // A numbers of everyone. AXXXX_AXXXX_AXXX format.
@@ -561,7 +601,8 @@ int main(int argc, char **argv) {
         fseek (input_fp, 0, SEEK_END);
         size = ftell(input_fp);
         if (0 == size) {
-            return EXIT_FAILURE;
+            output_error(output_fp, "Empty input file");
+            exit(EXIT_FAILURE); 
         }
         rewind(input_fp);
     }
@@ -570,7 +611,7 @@ int main(int argc, char **argv) {
     char **lines = read_lines(input_fp, size, &line_count);
     int student_count = 0;
     Student *students = generate_students_from_lines(lines, line_count, &student_count, output_fp);
-    merge_sort(students, student_count);
+    merge_sort(students, 0, student_count - 1);
 
     // Uncomment to test two student inputs
     // int cmp_result = student_comparator(students[0], students[1]);
@@ -598,6 +639,7 @@ int main(int argc, char **argv) {
             break;
         }
     }
+    fprintf(output_fp, "\n");
 
     // Free and close
     for (int i = 0; i < line_count; i++) {
