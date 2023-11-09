@@ -139,7 +139,7 @@ Pass in the output fp and a string literal to be written to output file
 */
 void output_error(FILE *output_fp, char error[]) {
 
-    fprintf(output_fp, "ERROR: %s\n\n", error);
+    fprintf(output_fp, "ERROR: %s\n", error);
     exit(EXIT_FAILURE);
 }
 
@@ -639,7 +639,6 @@ int main(int argc, char **argv) {
             break;
         }
     }
-    fprintf(output_fp, "\n");
 
     // Free and close
     for (int i = 0; i < line_count; i++) {
