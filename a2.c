@@ -12,20 +12,20 @@ typedef enum {
 typedef struct {
     char *first_name;
     char *last_name;
-    int birth_year;
+    char *birth_year;
     char *birth_month;
-    int birth_day;
+    char *birth_day;
     char *gpa_str;
 } DomesticStudent;
 
 typedef struct {
     char *first_name;
     char *last_name;
-    int birth_year;
+    char *birth_year;
     char *birth_month;
-    int birth_day;
+    char *birth_day;
     char *gpa_str;
-    int TOEFL_score;
+    char *TOEFL_score;
 } InternationalStudent;
 
 typedef union {
@@ -79,6 +79,8 @@ char** read_lines(FILE *input_fp, int size, int *line_count) {
         // Accounts for new line and null terminator
         line_size += 2;
 
+        if (line_size <= 2) return lines;
+
         // Moves pointer back after counting size
         fseek(input_fp, position, SEEK_SET);
 
@@ -95,7 +97,8 @@ char** read_lines(FILE *input_fp, int size, int *line_count) {
             }
             continue;
         }
-        line[strcspn(line, "\n")] = '\0';
+        size_t endline = strcspn(line, "\n");
+        line[endline] = '\0';
 
         lines[*line_count] = line;
         (*line_count)++;
@@ -167,6 +170,7 @@ Student parse_line(char *line, FILE *output_fp) {
     char *gpa_str;
     char *date;
     char *type;
+
     char *TOEFL_score_str;
     int TOEFL_score;
     
@@ -249,19 +253,19 @@ Student parse_line(char *line, FILE *output_fp) {
         student.type = INTERNATIONAL;
         student.student.international.first_name = strdup(first_name);
         student.student.international.last_name = strdup(last_name);
-        student.student.international.birth_year = year;
+        student.student.international.birth_year = strdup(year_str);
         student.student.international.birth_month = strdup(month);
-        student.student.international.birth_day = day;
+        student.student.international.birth_day = strdup(day_str);
         student.student.international.gpa_str = strdup(gpa_str);
-        student.student.international.TOEFL_score = TOEFL_score;
+        student.student.international.TOEFL_score = strdup(TOEFL_score_str);
     } else {
         // Generate domestic student
         student.type = DOMESTIC;
         student.student.domestic.first_name = strdup(first_name);
         student.student.domestic.last_name = strdup(last_name);
-        student.student.domestic.birth_year = year;
+        student.student.domestic.birth_year = strdup(year_str);
         student.student.domestic.birth_month = strdup(month);
-        student.student.domestic.birth_day = day;
+        student.student.domestic.birth_day = strdup(day_str);
         student.student.domestic.gpa_str = strdup(gpa_str);
     }
     return student;
@@ -293,11 +297,11 @@ void output_domestic(FILE *output_fp, Student *students, int student_count) {
             char *first_name = students[i].student.domestic.first_name;
             char *last_name = students[i].student.domestic.last_name;
             char *birth_month = students[i].student.domestic.birth_month;
-            int birth_day = students[i].student.domestic.birth_day;
-            int birth_year = students[i].student.domestic.birth_year;
+            char *birth_day = students[i].student.domestic.birth_day;
+            char *birth_year = students[i].student.domestic.birth_year;
             char *gpa_str = students[i].student.domestic.gpa_str;
 
-            fprintf(output_fp ,"%s %s %s-%d-%d %s D\n", first_name, last_name,
+            fprintf(output_fp ,"%s %s %s-%s-%s %s D\n", first_name, last_name,
                 birth_month, birth_day, birth_year, gpa_str);
         }
     }
@@ -312,12 +316,12 @@ void output_international(FILE *output_fp, Student *students, int student_count)
             char *first_name = students[i].student.international.first_name;
             char *last_name = students[i].student.international.last_name;
             char *birth_month = students[i].student.international.birth_month;
-            int birth_day = students[i].student.international.birth_day;
-            int birth_year = students[i].student.international.birth_year;
+            char *birth_day = students[i].student.international.birth_day;
+            char *birth_year = students[i].student.international.birth_year;
             char *gpa_str = students[i].student.international.gpa_str;
-            int TOEFL_score = students[i].student.international.TOEFL_score;
+            char *TOEFL_score = students[i].student.international.TOEFL_score;
 
-            fprintf(output_fp, "%s %s %s-%d-%d %s I %d\n", first_name, last_name,
+            fprintf(output_fp, "%s %s %s-%s-%s %s I %s\n", first_name, last_name,
                 birth_month, birth_day, birth_year, gpa_str, TOEFL_score);
         }
     }
@@ -332,23 +336,23 @@ void output_both(FILE *output_fp, Student *students, int student_count) {
             char *first_name = students[i].student.international.first_name;
             char *last_name = students[i].student.international.last_name;
             char *birth_month = students[i].student.international.birth_month;
-            int birth_day = students[i].student.international.birth_day;
-            int birth_year = students[i].student.international.birth_year;
+            char *birth_day = students[i].student.international.birth_day;
+            char *birth_year = students[i].student.international.birth_year;
             char *gpa_str = students[i].student.international.gpa_str;
-            int TOEFL_score = students[i].student.international.TOEFL_score;
+            char *TOEFL_score = students[i].student.international.TOEFL_score;
 
-            fprintf(output_fp, "%s %s %s-%d-%d %s I %d\n", first_name, last_name,
+            fprintf(output_fp, "%s %s %s-%s-%s %s I %s\n", first_name, last_name,
                 birth_month, birth_day, birth_year, gpa_str, TOEFL_score);
         }
         if (students[i].type == DOMESTIC) {
             char *first_name = students[i].student.domestic.first_name;
             char *last_name = students[i].student.domestic.last_name;
             char *birth_month = students[i].student.domestic.birth_month;
-            int birth_day = students[i].student.domestic.birth_day;
-            int birth_year = students[i].student.domestic.birth_year;
+            char *birth_day = students[i].student.domestic.birth_day;
+            char *birth_year = students[i].student.domestic.birth_year;
             char *gpa_str = students[i].student.domestic.gpa_str;
 
-            fprintf(output_fp ,"%s %s %s-%d-%d %s D\n", first_name, last_name,
+            fprintf(output_fp ,"%s %s %s-%s-%s %s D\n", first_name, last_name,
                 birth_month, birth_day, birth_year, gpa_str);
         }
     }
@@ -389,44 +393,44 @@ int student_comparator(Student a, Student b) {
 
     // Set the values
     if (a.type == DOMESTIC) {
-        a_birth_year = a.student.domestic.birth_year;
+        a_birth_year = atoi(a.student.domestic.birth_year);
         a_birth_month = month_to_int(a.student.domestic.birth_month);
-        a_birth_day = a.student.domestic.birth_day;
+        a_birth_day = atoi(a.student.domestic.birth_day);
         a_last_name = (char *)malloc(strlen(a.student.domestic.last_name) + 1);
         a_first_name = (char *)malloc(strlen(a.student.domestic.first_name) + 1);
         strcpy(a_last_name, a.student.domestic.last_name);
         strcpy(a_first_name, a.student.domestic.first_name);
         a_gpa = a.student.domestic.gpa_str;
     } else {
-        a_birth_year = a.student.international.birth_year;
+        a_birth_year = atoi(a.student.international.birth_year);
         a_birth_month = month_to_int(a.student.international.birth_month);
-        a_birth_day = a.student.international.birth_day;
+        a_birth_day = atoi(a.student.international.birth_day);
         a_last_name = (char *)malloc(strlen(a.student.international.last_name) + 1);
         a_first_name = (char *)malloc(strlen(a.student.international.first_name) + 1);
         strcpy(a_last_name, a.student.international.last_name);
         strcpy(a_first_name, a.student.international.first_name);
         a_gpa = a.student.international.gpa_str;
-        a_TOEFL = a.student.international.TOEFL_score;
+        a_TOEFL = atoi(a.student.international.TOEFL_score);
     }
     if (b.type == DOMESTIC) {
-        b_birth_year = b.student.domestic.birth_year;
+        b_birth_year = atoi(b.student.domestic.birth_year);
         b_birth_month = month_to_int(b.student.domestic.birth_month);
-        b_birth_day = b.student.domestic.birth_day;
+        b_birth_day = atoi(b.student.domestic.birth_day);
         b_last_name = (char *)malloc(strlen(b.student.domestic.last_name) + 1);
         b_first_name = (char *)malloc(strlen(b.student.domestic.first_name) + 1);
         strcpy(b_last_name, b.student.domestic.last_name);
         strcpy(b_first_name, b.student.domestic.first_name);
         b_gpa = b.student.domestic.gpa_str;
     } else {
-        b_birth_year = b.student.international.birth_year;
+        b_birth_year = atoi(b.student.international.birth_year);
         b_birth_month = month_to_int(b.student.international.birth_month);
-        b_birth_day = b.student.international.birth_day;
+        b_birth_day = atoi(b.student.international.birth_day);
         b_last_name = (char *)malloc(strlen(b.student.international.last_name) + 1);
         b_first_name = (char *)malloc(strlen(b.student.international.first_name) + 1);
         strcpy(b_last_name, b.student.international.last_name);
         strcpy(b_first_name, b.student.international.first_name);
         b_gpa = b.student.international.gpa_str;
-        b_TOEFL = b.student.international.TOEFL_score;
+        b_TOEFL = atoi(b.student.international.TOEFL_score);
     }
 
     // Start comparisons
@@ -602,17 +606,20 @@ int main(int argc, char **argv) {
     FILE *output_fp = fopen(argv[2], "w"); // Output file
 
     // Checks if files exist
-    if (input_fp == NULL || output_fp == NULL) {
-        perror("Error opening one or more files.\n");
+    if (output_fp == NULL) {
+        perror("Error opening output file\n");
         return EXIT_FAILURE;
     }
+    if (input_fp == NULL) {
+        output_error(output_fp, "Cannot open input file");
+    }
+
     // Checks if empty input file and assigns size
     if (NULL != input_fp) {
         fseek (input_fp, 0, SEEK_END);
         size = ftell(input_fp);
         if (0 == size) {
             output_error(output_fp, "Empty input file");
-            exit(EXIT_FAILURE); 
         }
         rewind(input_fp);
     }
@@ -622,17 +629,6 @@ int main(int argc, char **argv) {
     int student_count = 0;
     Student *students = generate_students_from_lines(lines, line_count, &student_count, output_fp);
     merge_sort(students, 0, student_count - 1);
-
-    // Uncomment to test two student inputs
-    // int cmp_result = student_comparator(students[0], students[1]);
-    // if (cmp_result == 0) {
-    //     printf("Both students are equal!\n");
-    // } else if (cmp_result == -1) {
-    //     printf("First student should come before!\n");
-    // } else {
-    //     printf("Second student should come before!\n");
-    // }
-    // return 0;
 
     // Output to file based on option
     switch (option) {
@@ -653,6 +649,23 @@ int main(int argc, char **argv) {
     // Free and close
     for (int i = 0; i < line_count; i++) {
         free(lines[i]);
+        Student student = students[i];
+        if (student.type == DOMESTIC) {
+            free(student.student.domestic.first_name);
+            free(student.student.domestic.last_name);
+            free(student.student.domestic.birth_year);
+            free(student.student.domestic.birth_month);
+            free(student.student.domestic.birth_day);
+            free(student.student.domestic.gpa_str);
+        } else {
+            free(student.student.international.first_name);
+            free(student.student.international.last_name);
+            free(student.student.international.birth_year);
+            free(student.student.international.birth_month);
+            free(student.student.international.birth_day);
+            free(student.student.international.gpa_str);
+            free(student.student.international.TOEFL_score);
+        }
     }
     free(lines);
     free(students);
