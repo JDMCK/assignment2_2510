@@ -150,7 +150,7 @@ Assumes month, day [1-31], and year are valid on their own
 int valid_date(char *month, int day, int year) {
     int month_num = month_to_int(month);
     int day_amount = days_per_month(month_num);
-    if (month_num == 2 && year != 2000  && year % 4 == 0) return day <= 29; // Check leap year
+    if (month_num == 2 && year % 4 == 0) return day <= 29; // Check leap year
     if (day > day_amount) return 0;
     return 1;
 }
@@ -212,7 +212,13 @@ Student parse_line(char *line, FILE *output_fp) {
 
     gpa_str = strtok(NULL, delimiter); // Handles gpa
     if (gpa_str) {
-        if (strlen(gpa_str) > 5) output_error(output_fp, "Too many decimals in GPA");
+        int dec_count = 0;
+        for (int i = 0; i < strlen(gpa_str); i++) {
+            if (gpa_str[i] == '.') dec_count++;
+            if (dec_count > 1) output_error(output_fp, "Invalid GPA");
+        }
+        char *dec_place = strchr(gpa_str, '.');
+        if (strlen(gpa_str) - (int) (dec_place - gpa_str) - 1 > 3) output_error(output_fp, "Too many decimal places in GPA");
         float gpa = atof(gpa_str);
         float epsilon = 0.0001f;
         if (gpa > 4.3f + epsilon || gpa < 0.0f) output_error(output_fp, "GPA must be between 0.0 and 4.3");

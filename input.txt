@@ -1,3 +1,1 @@
-A A Jul-20-1988 2.0 I 10
-A A Jul-20-1988 2.0 I 11
-A A Jul-20-1988 2.0 D
+Blaise Klein Sep-30-2001 0.3 D
