@@ -232,10 +232,13 @@ Student parse_line(char *line, FILE *output_fp) {
     TOEFL_score_str = strtok(NULL, delimiter); // Handles TOEFL
     if (TOEFL_score_str) {
         if (strcmp(type, "I") == 0) {
+            int i = 0;
+            while (TOEFL_score_str[i] != '\0') {
+                if (TOEFL_score_str[i] < '0' || TOEFL_score_str[i] > '9') output_error(output_fp, "TOEFL must be an integer");
+                i++;
+            }
             TOEFL_score = atoi(TOEFL_score_str);
             if (TOEFL_score > 120 || TOEFL_score < 0) output_error(output_fp, "TOEFL must be an int between 0 and 120");
-                for (int i = 0; i < strlen(TOEFL_score_str); i++)
-                    if (TOEFL_score_str[i] == '.') output_error(output_fp, "TOEFL cannot be a float");
         } else output_error(output_fp, "Domestic students cannot have a TOEFL");
     } else if (strcmp(type, "I") == 0) output_error(output_fp, "Missing TOEFL");
 
