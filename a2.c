@@ -214,11 +214,12 @@ Student parse_line(char *line, FILE *output_fp) {
     if (gpa_str) {
         int dec_count = 0;
         for (int i = 0; i < strlen(gpa_str); i++) {
+            if (gpa_str[i] != '.' && (gpa_str[i] < '0' || gpa_str[i] > '9')) output_error(output_fp, "GPA must be a float");
             if (gpa_str[i] == '.') dec_count++;
             if (dec_count > 1) output_error(output_fp, "Invalid GPA");
         }
         char *dec_place = strchr(gpa_str, '.');
-        if (strlen(gpa_str) - (int) (dec_place - gpa_str) - 1 > 3) output_error(output_fp, "Too many decimal places in GPA");
+        if (dec_count > 0 && strlen(gpa_str) - (int) (dec_place - gpa_str) - 1 > 3) output_error(output_fp, "Too many decimal places in GPA");
         float gpa = atof(gpa_str);
         float epsilon = 0.0001f;
         if (gpa > 4.3f + epsilon || gpa < 0.0f) output_error(output_fp, "GPA must be between 0.0 and 4.3");
