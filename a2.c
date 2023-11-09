@@ -115,7 +115,7 @@ Ex. "Jan" => 1, "Feb" => 2, etc.
 EXIT_FAILURE if invalid month
 */
 int month_to_int(char month[]) {
-    char *months[] = {
+    char months[][4] = {
         "Jan", "Feb", "Mar", "Apr", "May", "Jun", 
         "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
 
@@ -128,13 +128,31 @@ int month_to_int(char month[]) {
     return -1;
 }
 
+int days_per_month(int month) {
+    int days[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+    
+    return days[month - 1];
+}
+
 /*
 Pass in the output fp and a string literal to be written to output file
 */
 void output_error(FILE *output_fp, char error[]) {
 
-    fprintf(output_fp, "ERROR: %s", error);
+    fprintf(output_fp, "ERROR: %s\n", error);
     exit(EXIT_FAILURE);
+}
+
+/*
+Checks if the date exists in the real calendar, including leap year considerations
+Assumes month, day [1-31], and year are valid on their own
+*/
+int valid_date(char *month, int day, int year) {
+    int month_num = month_to_int(month);
+    int day_amount = days_per_month(month_num);
+    if (month_num == 2 && year != 2000  && year % 4 == 0) return day <= 29; // Check leap year
+    if (day > day_amount) return 0;
+    return 1;
 }
 
 /*
@@ -144,63 +162,98 @@ Also takes output fp to handle errors by calling output_error()
 Student parse_line(char *line, FILE *output_fp) {
     Student student;
 
-    // Temporaries to hold parts of the input
-    char first_name[50];
-    char last_name[50];
-    char date[15] = "";
-    char gpa_str[6] = "";
-    char type;
-    int TOEFL_score = -1;
-
-    // Parse input assuming the last field can be 'I TOEFL' or 'D'
-    sscanf(line, "%s %s %s %s %c %d", first_name, last_name, date, gpa_str, &type, &TOEFL_score);
-
-    // Parse the birth date
-    int birth_year, birth_day;
-    char birth_month[4];
-    sscanf(date, "%3s-%d-%d", birth_month, &birth_day, &birth_year);
-    birth_month[3] = '\0';
-
-    // Checks for invalid inputs
+    char *first_name;
+    char *last_name;
+    char *gpa_str;
+    char *date;
+    char *type;
+    char *TOEFL_score_str;
+    int TOEFL_score;
     
-    // Checks for date
-    if (date[0] == '\0') output_error(output_fp, "Invalid date");
-    if (birth_year < 1950 || birth_year > 2010) output_error(output_fp, "Invalid birth year");
-    if (month_to_int(birth_month) == -1) output_error(output_fp, "Invalid birth month");
-    if (birth_day > 31) output_error(output_fp, "Invalid birth day");
+    char *month;
+    char *day_str;
+    char *year_str;
+    int day;
+    int year;
 
-    // Checks for GPA
-    float epsilon = 0.0001f;
-    float gpa;
-    if (sscanf(gpa_str, "%f", &gpa) != 1 || gpa > 4.3f + epsilon || gpa < 0) output_error(output_fp, "Invalid GPA");
+    char delimiter[] = " ";
 
-    // Checks type
-    if (type != 'I' && type != 'D') output_error(output_fp, "Invalid type");
+    first_name = strtok(line, delimiter); // Handles first_name
+    if (!first_name) output_error(output_fp, "Invalid first name");
 
-    // Checks TOEFL
-    if (type == 'I')
-        if (TOEFL_score > 120 || TOEFL_score < 0) output_error(output_fp, "Invalid TOEFL score");
+    last_name = strtok(NULL, delimiter); // Handles last_name
+    if (!last_name) output_error(output_fp, "Invalid last name");
 
-    // Assign the common fields
-    if (type == 'I') {
+    char date_delim[] = "-";
+    date = strtok(NULL, delimiter);
+    if (date) {
+        for (int i = 0; i < strlen(date); i++)
+            if (date[i] == '.') output_error(output_fp, "Date cannot contain a float");
+            
+        month = strtok_r(date, date_delim, &date); // Handles month
+        if (!month || month_to_int(month) == -1) output_error(output_fp, "Invalid month");
+
+        day_str = strtok_r(date, date_delim, &date); // Handles day
+        if (day_str) {
+            day = atoi(day_str);
+            if (day > 31 || day < 1) output_error(output_fp, "Invalid day");
+        } else output_error(output_fp, "Invalid day");
+
+        year_str = strtok_r(date, date_delim, &date); // Handles year
+        if (year_str) {
+            year = atoi(year_str);
+            if (year < 1950 || year > 2010) output_error(output_fp, "Year must be between 1950 and 2010 (inclusive)");
+        } else output_error(output_fp, "Invalid year");
+
+        // Checks if date is valid
+        if (!valid_date(month, day, year)) output_error(output_fp, "Invalid date");
+        
+    } else output_error(output_fp, "Invalid date");
+
+    gpa_str = strtok(NULL, delimiter); // Handles gpa
+    if (gpa_str) {
+        if (strlen(gpa_str) > 5) output_error(output_fp, "Too many decimals in GPA");
+        float gpa = atof(gpa_str);
+        float epsilon = 0.0001f;
+        if (gpa > 4.3f + epsilon || gpa < 0.0f) output_error(output_fp, "GPA must be between 0.0 and 4.3");
+    } else output_error(output_fp, "Invalid GPA");
+
+    type = strtok(NULL, delimiter); // Handles type
+    if (type) {
+        if (strcmp(type, "I") && strcmp(type, "D")) output_error(output_fp, "Invalid type");
+    } else output_error(output_fp, "Invalid type");
+
+    TOEFL_score_str = strtok(NULL, delimiter); // Handles TOEFL
+    if (TOEFL_score_str) {
+        if (strcmp(type, "I") == 0) {
+            TOEFL_score = atoi(TOEFL_score_str);
+            if (TOEFL_score > 120 || TOEFL_score < 0) output_error(output_fp, "TOEFL must be an int between 0 and 120");
+                for (int i = 0; i < strlen(TOEFL_score_str); i++)
+                    if (TOEFL_score_str[i] == '.') output_error(output_fp, "TOEFL cannot be a float");
+        } else output_error(output_fp, "Domestic students cannot have a TOEFL");
+    } else if (strcmp(type, "I") == 0) output_error(output_fp, "Missing TOEFL");
+
+    // Generates student
+    if (strcmp(type, "I") == 0) {
+        // Generate international student
         student.type = INTERNATIONAL;
         student.student.international.first_name = strdup(first_name);
         student.student.international.last_name = strdup(last_name);
-        student.student.international.birth_year = birth_year;
-        student.student.international.birth_month = strdup(birth_month);
-        student.student.international.birth_day = birth_day;
+        student.student.international.birth_year = year;
+        student.student.international.birth_month = strdup(month);
+        student.student.international.birth_day = day;
         student.student.international.gpa_str = strdup(gpa_str);
         student.student.international.TOEFL_score = TOEFL_score;
     } else {
+        // Generate domestic student
         student.type = DOMESTIC;
         student.student.domestic.first_name = strdup(first_name);
         student.student.domestic.last_name = strdup(last_name);
-        student.student.domestic.birth_year = birth_year;
-        student.student.domestic.birth_month = strdup(birth_month);
-        student.student.domestic.birth_day = birth_day;
+        student.student.domestic.birth_year = year;
+        student.student.domestic.birth_month = strdup(month);
+        student.student.domestic.birth_day = day;
         student.student.domestic.gpa_str = strdup(gpa_str);
     }
-
     return student;
 }
 
