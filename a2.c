@@ -201,12 +201,22 @@ Student parse_line(char *line, FILE *output_fp) {
         if (day_str) {
             day = atoi(day_str);
             if (day > 31 || day < 1) output_error(output_fp, "Invalid day");
+            int i = 0;
+            while (day_str[i] != '\0') {
+                if (day_str[i] < '0' || day_str[i] > '9') output_error(output_fp, "Day must be an integer");
+                i++;
+            }
         } else output_error(output_fp, "Invalid day");
 
-        year_str = strtok_r(date, date_delim, &date); // Handles year
+        year_str = strtok_r(date, delimiter, &date); // Handles year
         if (year_str) {
             year = atoi(year_str);
             if (year < 1950 || year > 2010) output_error(output_fp, "Year must be between 1950 and 2010 (inclusive)");
+            int i = 0;
+            while (year_str[i] != '\0') {
+                if (year_str[i] < '0' || year_str[i] > '9') output_error(output_fp, "Year must be an integer");
+                i++;
+            }
         } else output_error(output_fp, "Invalid year");
 
         // Checks if date is valid
@@ -593,13 +603,6 @@ int main(int argc, char **argv) {
         return EXIT_FAILURE;
     }
 
-    // Validating option argument
-    int option = atoi(argv[3]);
-    if (option < 1 || option > 3) {
-        printf("Usage: <option> must be an intger between 1 and 3 (inclusive)\n");
-        return 1;
-    }
-
     FILE *input_fp = fopen(argv[1], "r"); // Input file
     int size = 0; // Input size in bytes
 
@@ -610,8 +613,16 @@ int main(int argc, char **argv) {
         perror("Error opening output file\n");
         return EXIT_FAILURE;
     }
+
     if (input_fp == NULL) {
         output_error(output_fp, "Cannot open input file");
+    }
+
+    // Validating option argument
+    int option = atoi(argv[3]);
+    if (option < 1 || option > 3) {
+        output_error(output_fp, "<option> must be an intger between 1 and 3 (inclusive)");
+        return 1;
     }
 
     // Checks if empty input file and assigns size
